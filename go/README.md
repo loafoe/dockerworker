@@ -4,16 +4,10 @@ This example will show you how to test and deploy Go (Golang) code to IronWorker
 
 **NOTE**: Be sure you've followed the base [getting started instructions on the top level README](https://github.com/iron-io/dockerworker).
 
-### 1. Vendor dependencies and build:
+### 1. Build
 
 ```sh
-docker run --rm -it -v "$PWD":/go/src/x/y/z -w /go/src/x/y/z -e "GOPATH=/go/src/x/y/z/vendor:/go" iron/go:dev go get
-```
-
-Then build it:
-
-```sh
-docker run --rm -it -v "$PWD":/go/src/x/y/z -w /go/src/x/y/z -e "GOPATH=/go/src/x/y/z/vendor:/go" iron/go:dev go build -o hello
+docker build -t hello .
 ```
 
 ### 2. Test locally
@@ -21,7 +15,7 @@ docker run --rm -it -v "$PWD":/go/src/x/y/z -w /go/src/x/y/z -e "GOPATH=/go/src/
 Now test it locally:
 
 ```sh
-docker run --rm -it -e "PAYLOAD_FILE=hello.payload.json" -e "YOUR_ENV_VAR=ANYTHING" -v "$PWD":/app -w /app  iron/go ./hello
+docker run --rm -it -v $(PWD)/hello.payload.json:/app/hello.payload.json -e "PAYLOAD_FILE=hello.payload.json" -e "YOUR_ENV_VAR=ANYTHING" hello
 ```
 
 The PAYLOAD_FILE environment variable is passed in to your worker automatically and tells you
@@ -58,7 +52,7 @@ Push it to Docker Hub:
 docker push USERNAME/hello:0.0.1
 ```
 
-### 4. Register your image with Iron
+### 5. Register your image with Iron
 
 Ok, we're ready to run this on Iron now, but first we have to let Iron know about the
 image you just pushed to Docker Hub. Also, you can optionally register environment variables here that will be passed into your container at runtime.
@@ -67,7 +61,7 @@ image you just pushed to Docker Hub. Also, you can optionally register environme
 iron register -e "YOUR_ENV_VAR=ANYTHING" USERNAME/hello:0.0.1
 ```
 
-### 5. Queue / Schedule jobs for your image
+### 6. Queue / Schedule jobs for your image
 
 Now you can start queuing jobs or schedule recurring jobs for your image. Let's quickly
 queue up a job to try it out.
@@ -107,36 +101,3 @@ to let Iron know how to access your private images:
 ```sh
 iron docker login -e YOUR_DOCKER_HUB_EMAIL -u YOUR_DOCKER_HUB_USERNAME -p YOUR_DOCKER_HUB_PASSWORD
 ```
-
-Then just do everything the same as above.
-
-## If you don't want to package your code using Docker
-
-You can package and send your code to Iron directly with the instructions below.
-Start with steps 1 and 2 above, then continue at step 3 here.
-
-### 3. Package your code
-
-```sh
-zip -r hello-go.zip .
-```
-
-### 4. Upload your code
-
-Then upload it:
-
-```sh
-iron worker upload --name hello-go --zip hello-go.zip iron/go ./hello
-```
-
-### 5. Queue / Schedule jobs for your worker
-
-Now you can start queuing jobs or schedule recurring jobs for your worker. Let's quickly
-queue up a job to try it out.
-
-```sh
-iron worker queue -payload-file hello.payload.json --wait hello-go
-```
-
-The `--wait` parameter waits for the job to finish, then prints the output.
-You will also see a link to [HUD](http://hud.iron.io) where you can see all the rest of the task details along with the log output.
